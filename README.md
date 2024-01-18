@@ -1,66 +1,34 @@
-## Foundry
+1. Relative Stability (Anchored/Pegged) -> $1.00
+   1. Chainlink Price Feed
+   2. Set a function to exchange ETH & BTC -> $$$
+2. Stability Mechanism (Minting): Algorithmic (Decentralized)
+   1. People can only mint stable coin with enough collateral
+3. Collateral: Exogenous (Crypto)
+   1. wETH
+   2. wBTC
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
-Foundry consists of:
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
-## Documentation
+Example workflow
 
-https://book.getfoundry.sh/
+1. User deposits collateral of Token ETH with precision 18 -> 1ETH - 1e18
+2. User tries to mint 50 DSC tokens
+   1. user minted DSC tokens +=50
+   2. ETH/USD -> 2000 USD comes in the form 2000 * 1e8
+   3. collateral value is price - 2000* 1e8 * ADDITIONAL_FEED_PRECISION * amount / PRECISION = 2000 * 1e8 * 1e10 * 1e18 / 1e18 = 2000 * 1e18
+   4. total dsc minted - 50, total collateral value - 2000 * 1e18
+   5. collateralValueAdjustedForThreshold - collateral value * 50 / 100 = 1000 * 1e18
+   6. 1000 * 1e18 * 1e18/total dsc minted = 1000 * 1e36 / 50 = 20 * 1e36 > 1e18
 
-## Usage
+if dsc minted = 2000 * 1e18
+1000 * 1e18 * 1e18 / 2000* 1e18 = 1e18/2 = 5*1e17 <? 1e18
 
-### Build
+this is if dsc has 18 decimals
+what if dsc have 2 decimals like real USD
 
-```shell
-$ forge build
-```
+the value of 500 will be 5 DSC => 5USD
 
-### Test
+if dsc minted = 2000 * 1e2
+1000 * 1e18*1e18 / 2000 * 1e2
 
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
