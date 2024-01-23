@@ -47,6 +47,6 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
     }
 
     function convertUsdAmountToDSC(uint256 amount, uint256 decimals) public view returns (uint256) {
-        return amount * 10 ** super.decimals() / 10 ** decimals;
+        return amount * (10 ** super.decimals()) / 10 ** decimals;
     }
 }

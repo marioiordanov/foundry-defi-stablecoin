@@ -6,6 +6,8 @@ import {ReentrancyGuard} from "@openzeppelin-contracts/security/ReentrancyGuard.
 import {IERC20} from "@openzeppelin-contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin-contracts/token/ERC20/ERC20.sol";
 import {AggregatorV3Interface} from "@chainlink-contracts/v0.8/interfaces/AggregatorV3Interface.sol";
+import {console} from "forge-std/console.sol";
+import {OracleLib} from "./libraries/OracleLib.sol";
 
 /**
  * @title DSCEngine
@@ -34,6 +36,12 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__HealthFactorIsFine();
     error DSCEngine__HealthFactorNotImproved();
     error DSCEngine__ZeroAddressNotAllowed();
+
+    //////////
+    // Type //
+    //////////
+
+    using OracleLib for AggregatorV3Interface;
 
     /////////////////////
     // State Variables //
@@ -264,19 +272,12 @@ contract DSCEngine is ReentrancyGuard {
             return type(uint256).max;
         }
 
-        // get collateral threshold
-        uint256 collateralValueAdjustedForThreshold =
-            (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        // collateral should be reduced with LIQUIDATION_THRESHOLD / LIQUIDATION_PRECISION
 
-        for (uint256 i = 0; i < s_collateralTokens.length; i++) {
-            address token = s_collateralTokens[i];
-            uint256 amount = s_collateralDeposited[user][token];
-        }
-
-        // factor is collateral threshold in usd multiplied by DSC token decimals / total dsc minted
+        // factor is collateral threshold in usd multiplied by DSC token decimals * LIQUIDATION_THRESHOLD / total dsc minted * LIQUIDATION_PRECISION
         // this is done to remove decimals from the equation
-        return (collateralValueAdjustedForThreshold * (10 ** i_dscAddress.decimals()))
-            / (totalDscMinted * 10 ** usdDecimals);
+        return (collateralValueInUsd * (10 ** i_dscAddress.decimals()) * LIQUIDATION_THRESHOLD)
+            / (totalDscMinted * (10 ** usdDecimals) * LIQUIDATION_PRECISION);
     }
 
     function _getAccountInformation(address user)
@@ -348,17 +349,17 @@ contract DSCEngine is ReentrancyGuard {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         uint256 priceFeedDecimals = priceFeed.decimals();
         uint256 tokenDecimals = ERC20(token).decimals();
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
 
         uint256 usdValue =
-            uint256(price) * amount * (10 ** USD_VALUE_DECIMALS) / (10 ** tokenDecimals * 10 ** priceFeedDecimals);
+            uint256(price) * amount * (10 ** USD_VALUE_DECIMALS) / ((10 ** tokenDecimals) * (10 ** priceFeedDecimals));
 
         return (usdValue, USD_VALUE_DECIMALS);
     }
 
     function getTokenAmountFromUsd(address token, uint256 usdAmountInDSC) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
         uint256 priceFeedDecimals = priceFeed.decimals();
 
         // Example:
@@ -384,5 +385,17 @@ contract DSCEngine is ReentrancyGuard {
 
     function getOvercollateralizationRatio() public pure returns (uint256 numerator, uint256 denominator) {
         return (LIQUIDATION_THRESHOLD, LIQUIDATION_PRECISION);
+    }
+
+    function getCollateralTokens() public view returns (address[] memory) {
+        return s_collateralTokens;
+    }
+
+    function getUserCollateral(address user, address token) public view returns (uint256) {
+        return s_collateralDeposited[user][token];
+    }
+
+    function getCollateralTokenPriceFeed(address collateralToken) public view returns (address) {
+        return s_priceFeeds[collateralToken];
     }
 }

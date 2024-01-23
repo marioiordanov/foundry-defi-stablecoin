@@ -118,6 +118,93 @@ contract DSCEngineTest is Test {
         assertEq(expectedWeth, actualWeth);
     }
 
+    function testUsdValueFromCollateral() public view {
+        uint256 wethCollateralAmount = 6915120017154;
+
+        (uint256 usdValue, uint256 decimals) = dscEngine.getUsdValue(weth, wethCollateralAmount);
+        console.log("usd value: %d, decimals: %d", usdValue, decimals);
+        uint256 collateralInDsc = dsc.convertUsdAmountToDSC(usdValue, decimals);
+        uint256 totalDscMinted = 0;
+        console.log(collateralInDsc);
+
+        uint256 collateralValueInUsd = 1;
+        uint256 usdDecimals = 2;
+
+        console.log(
+            "health factor: ", (collateralValueInUsd * (10 ** dsc.decimals())) * 50 / (5122 * 100 * (10 ** usdDecimals))
+        );
+
+        int256 maxDscToMint = int256((collateralInDsc / 2)) - int256(totalDscMinted);
+        console.log("maxdscTomint: ", uint256(maxDscToMint));
+
+        /**
+         * [127579] Handler::mintDSC(5122, 307)
+         * ├─ [61733] DSCEngine::getAccountInformation(0x7d67D1161e20113C7c816a2a28e61098154c0780) [staticcall]
+         * │   ├─ [0] console::log("totalDscMinted: ", 0) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [0] console::log(ERC20Mock: [0xBb2180ebd78ce97360503434eD37fcf4a1Df61c3], 6915120017154 [6.915e12]) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [2303] MockV3Aggregator::decimals() [staticcall]
+         * │   │   └─ ← 8
+         * │   ├─ [244] ERC20Mock::decimals() [staticcall]
+         * │   │   └─ ← 18
+         * │   ├─ [8993] MockV3Aggregator::latestRoundData() [staticcall]
+         * │   │   └─ ← 1, 200000000000 [2e11], 1, 1, 1
+         * │   ├─ [0] console::log(ERC20Mock: [0xDB8cFf278adCCF9E9b5da745B44E754fC4EE3C76], 0) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [2303] MockV3Aggregator::decimals() [staticcall]
+         * │   │   └─ ← 8
+         * │   ├─ [244] ERC20Mock::decimals() [staticcall]
+         * │   │   └─ ← 18
+         * │   ├─ [8993] MockV3Aggregator::latestRoundData() [staticcall]
+         * │   │   └─ ← 1, 3000000000000 [3e12], 1, 1, 1
+         * │   └─ ← 0, 1, 2
+         * ├─ [0] console::log("totalDscMinted: ", 0) [staticcall]
+         * │   └─ ← ()
+         * ├─ [0] console::log("totalCollateralUsd: ", 1) [staticcall]
+         * │   └─ ← ()
+         * ├─ [1187] DecentralizedStableCoin::convertUsdAmountToDSC(1, 2) [staticcall]
+         * │   └─ ← 10000000000000000 [1e16]
+         * ├─ [0] console::log("collateralInDsc: ", 10000000000000000 [1e16]) [staticcall]
+         * │   └─ ← ()
+         * ├─ [0] console::log("Bound Result", 5122) [staticcall]
+         * │   └─ ← ()
+         * ├─ [0] console::log("maxdscTomint: ", 5000000000000000 [5e15]) [staticcall]
+         * │   └─ ← ()
+         * ├─ [0] console::log("amount: ", 5122) [staticcall]
+         * │   └─ ← ()
+         * ├─ [0] VM::startPrank(0x7d67D1161e20113C7c816a2a28e61098154c0780)
+         * │   └─ ← ()
+         * ├─ [41543] DSCEngine::mintDsc(5122)
+         * │   ├─ [0] console::log("totalDscMinted: ", 5122) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [0] console::log(ERC20Mock: [0xBb2180ebd78ce97360503434eD37fcf4a1Df61c3], 6915120017154 [6.915e12]) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [303] MockV3Aggregator::decimals() [staticcall]
+         * │   │   └─ ← 8
+         * │   ├─ [244] ERC20Mock::decimals() [staticcall]
+         * │   │   └─ ← 18
+         * │   ├─ [993] MockV3Aggregator::latestRoundData() [staticcall]
+         * │   │   └─ ← 1, 200000000000 [2e11], 1, 1, 1
+         * │   ├─ [0] console::log(ERC20Mock: [0xDB8cFf278adCCF9E9b5da745B44E754fC4EE3C76], 0) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [303] MockV3Aggregator::decimals() [staticcall]
+         * │   │   └─ ← 8
+         * │   ├─ [244] ERC20Mock::decimals() [staticcall]
+         * │   │   └─ ← 18
+         * │   ├─ [993] MockV3Aggregator::latestRoundData() [staticcall]
+         * │   │   └─ ← 1, 3000000000000 [3e12], 1, 1, 1
+         * │   ├─ [0] console::log("collateralValueAdjustedForThreshold: ", 0) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [0] console::log("totalDscMinted: ", 5122) [staticcall]
+         * │   │   └─ ← ()
+         * │   ├─ [200] DecentralizedStableCoin::decimals() [staticcall]
+         * │   │   └─ ← 18
+         * │   └─ ← DSCEngine__HealthFactorIsBelowMinimum(0)
+         * └─ ← DSCEngine__HealthFactorIsBelowMinimum(0)
+         */
+    }
+
     ///////////////////////
     // Constructor tests //
     ///////////////////////
@@ -297,8 +384,6 @@ contract DSCEngineTest is Test {
         dscEngine.redeemCollateral(weth, maximumCollateralThatCanBeRedeemedInWETH);
 
         assertEq(ERC20Mock(weth).balanceOf(USER), startingBalance + maximumCollateralThatCanBeRedeemedInWETH);
-
-        vm.stopBroadcast();
     }
 
     function testCanRedeemAllCollateral() public depositedCollateral(weth, dscEngine) {
@@ -447,7 +532,7 @@ contract DSCEngineTest is Test {
         assertEq(IERC20(dsc).balanceOf(liquidator), liquidatorDscStartingBalance - debtToCover);
     }
 
-    function testTruncate() public {
+    function testTruncate() public view {
         bytes32 val = 0x0112233445566778899aabbccddeeff99112233445566778899aabbccddeeff0;
         console.logBytes20(bytes20(val));
 
